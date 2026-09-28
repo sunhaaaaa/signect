@@ -1,26 +1,10 @@
 import { useMemo, useState } from 'react'
 import styled from 'styled-components'
+import { useSearchParams } from 'react-router-dom'
 import { Card } from '../components/ui/Card'
 import { SignAnimationPlayer } from '../components/learn/SignAnimationPlayer'
 import { useSignReferences } from '../hooks/useSignReferences'
-
-const TOPIC_ICONS: Record<string, string> = {
-  전체: '📚',
-  '기관·장소': '🏢',
-  '가족·관계': '👪',
-  '사람·직업': '👤',
-  음식: '🍚',
-  '동물·자연': '🌿',
-  '색깔·외형': '🎨',
-  '감정·상태': '😊',
-  '시간·날짜': '🕒',
-  '학교·교육': '🎓',
-  '복지·장애': '🤝',
-  '사회·법률·행정': '⚖️',
-  '사물·생활': '🧺',
-  '동작·묘사': '🏃',
-  기타: '🗂️',
-}
+import { PixelGlyph, topicGlyphKind } from '../components/brand/PixelTopicIcon'
 
 const MAX_RESULTS = 60
 
@@ -32,7 +16,7 @@ const Title = styled.h1`
 
 const Subtitle = styled.p`
   margin: 0 0 24px;
-  font-size: 13px;
+  font-size: 15px;
   color: ${({ theme }) => theme.colors.textMuted};
 `
 
@@ -41,7 +25,7 @@ const SearchInput = styled.input`
   padding: 14px 16px;
   margin-bottom: 16px;
   font-family: ${({ theme }) => theme.fonts.body};
-  font-size: 15px;
+  font-size: 17px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   background: ${({ theme }) => theme.colors.surface};
   box-shadow: ${({ theme }) => theme.shadow.cardSm};
@@ -69,15 +53,22 @@ const Chip = styled.button<{ $active: boolean }>`
   gap: 6px;
   padding: 7px 12px;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 9.5px;
+  font-size: 11.5px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   background: ${({ theme, $active }) => ($active ? theme.colors.gold : theme.colors.surface)};
   color: ${({ theme }) => theme.colors.text};
   white-space: nowrap;
 `
 
+const ChipIcon = styled.span`
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+`
+
 const ResultsMeta = styled.p`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
   margin: 0 0 12px;
 `
@@ -93,7 +84,7 @@ const WordChip = styled.button<{ $active: boolean }>`
   padding: 9px 14px;
   font-family: ${({ theme }) => theme.fonts.body};
   font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   background: ${({ theme, $active }) => ($active ? theme.colors.primary : theme.colors.surface)};
   color: ${({ theme, $active }) => ($active ? '#fff' : theme.colors.text)};
@@ -120,22 +111,31 @@ const PreviewWord = styled.h2`
 `
 
 const PreviewTopic = styled.span`
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
   color: ${({ theme }) => theme.colors.textMuted};
 `
 
 const Placeholder = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
-  font-size: 13px;
+  font-size: 15px;
   text-align: center;
   padding: 24px 0;
 `
 
 export default function Dictionary() {
   const { references, isLoading } = useSignReferences()
-  const [query, setQuery] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [topic, setTopic] = useState('all')
   const [selected, setSelected] = useState<string | null>(null)
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value)
+    setSearchParams(value ? { q: value } : {}, { replace: true })
+  }
 
   const wordRefs = useMemo(() => references.filter((r) => r.category === 'word'), [references])
 
@@ -187,16 +187,23 @@ export default function Dictionary() {
         type="text"
         placeholder="단어를 입력하세요 (예: 가족, 감사)"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => handleQueryChange(e.target.value)}
+        autoFocus={!!searchParams.get('q')}
       />
 
       <ChipRow>
         <Chip $active={topic === 'all'} onClick={() => setTopic('all')}>
-          {TOPIC_ICONS['전체']} 전체
+          <ChipIcon>
+            <PixelGlyph kind={topicGlyphKind('전체')} />
+          </ChipIcon>
+          전체
         </Chip>
         {topics.map((t) => (
           <Chip key={t.topic} $active={topic === t.topic} onClick={() => setTopic(t.topic)}>
-            {TOPIC_ICONS[t.topic] ?? '🗂️'} {t.topic} {t.count}
+            <ChipIcon>
+              <PixelGlyph kind={topicGlyphKind(t.topic)} />
+            </ChipIcon>
+            {t.topic} {t.count}
           </Chip>
         ))}
       </ChipRow>
@@ -226,7 +233,10 @@ export default function Dictionary() {
           <PreviewHead>
             <PreviewWord>{selected}</PreviewWord>
             <PreviewTopic>
-              {TOPIC_ICONS[labelTopic.get(selected) ?? '기타']} {labelTopic.get(selected)}
+              <ChipIcon>
+                <PixelGlyph kind={topicGlyphKind(labelTopic.get(selected) ?? '기타')} />
+              </ChipIcon>
+              {labelTopic.get(selected)}
             </PreviewTopic>
           </PreviewHead>
           <SignAnimationPlayer signId={selectedSignId} label={selected} />

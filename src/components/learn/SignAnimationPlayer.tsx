@@ -94,7 +94,7 @@ const Canvas = styled.canvas`
 
 const Placeholder = styled.p`
   color: #9aa0c3;
-  font-size: 13px;
+  font-size: 15px;
   padding: 0 20px;
   text-align: center;
 `
@@ -109,7 +109,7 @@ const PlayButton = styled.button`
   border: none;
   border-radius: 6px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
 `
 

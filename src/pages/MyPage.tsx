@@ -54,7 +54,7 @@ const StatCard = styled.div<{ $bg: string; $fg: string }>`
 `
 
 const StatLabel = styled.div`
-  font-size: 11px;
+  font-size: 13px;
   opacity: 0.9;
 `
 
@@ -65,7 +65,7 @@ const StatValue = styled.div`
 `
 
 const StatHint = styled.div`
-  font-size: 11px;
+  font-size: 13px;
   opacity: 0.7;
 `
 
@@ -100,7 +100,7 @@ const ChartPlaceholder = styled.div`
   align-items: center;
   justify-content: center;
   color: ${({ theme }) => theme.colors.textMuted};
-  font-size: 12px;
+  font-size: 14px;
   margin-bottom: 16px;
   text-align: center;
   padding: 8px;
@@ -114,11 +114,11 @@ const MiniStats = styled.div`
 
 const MiniValue = styled.div`
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 15px;
+  font-size: 17px;
 `
 
 const MiniLabel = styled.div`
-  font-size: 11px;
+  font-size: 13px;
   color: ${({ theme }) => theme.colors.textMuted};
 `
 
@@ -127,7 +127,7 @@ const WordRow = styled.div`
   justify-content: space-between;
   padding: 10px 0;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  font-size: 13px;
+  font-size: 15px;
 
   &:last-child {
     border-bottom: none;
@@ -136,7 +136,7 @@ const WordRow = styled.div`
 
 const EmptyNote = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
-  font-size: 13px;
+  font-size: 15px;
   margin: 0;
 `
 
@@ -151,7 +151,7 @@ const Badge = styled.span<{ $earned: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   padding: 6px 10px;
   border: 2px solid ${({ theme }) => theme.colors.outline};
@@ -173,33 +173,8 @@ const LevelNum = styled.span`
 `
 
 const LevelSub = styled.span`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
-`
-
-const PathRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 14px;
-`
-
-const NodeChip = styled.div<{ $state: 'done' | 'current' | 'locked' }>`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border: 3px solid ${({ theme }) => theme.colors.outline};
-  background: ${({ theme, $state }) =>
-    $state === 'done' ? theme.colors.accent : $state === 'current' ? theme.colors.gold : theme.colors.surface};
-  color: ${({ theme, $state }) => ($state === 'done' ? '#fff' : theme.colors.text)};
-  opacity: ${({ $state }) => ($state === 'locked' ? 0.5 : 1)};
-  font-size: 12px;
-`
-
-const NodeProgress = styled.span`
-  font-size: 10px;
-  opacity: 0.85;
 `
 
 const QuestList = styled.ul`
@@ -214,7 +189,7 @@ const QuestItem = styled.li<{ $done: boolean }>`
   gap: 10px;
   padding: 7px 0;
   border-bottom: 1px dashed ${({ theme }) => theme.colors.border};
-  font-size: 13px;
+  font-size: 15px;
   color: ${({ theme, $done }) => ($done ? theme.colors.text : theme.colors.textMuted)};
 
   &:last-child {
@@ -230,7 +205,7 @@ const QuestBox = styled.span<{ $done: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 900;
   background: ${({ theme, $done }) => ($done ? theme.colors.success : 'transparent')};
   border-color: ${({ theme, $done }) => ($done ? theme.colors.success : theme.colors.textMuted)};
@@ -238,7 +213,7 @@ const QuestBox = styled.span<{ $done: boolean }>`
 `
 
 const ReviewNote = styled.p`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
   margin: 14px 0 0;
 `
@@ -268,7 +243,7 @@ const Swatch = styled.button<{ $color: string; $active: boolean; $locked: boolea
 `
 
 const SlotLabel = styled.div`
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.textMuted};
   margin-bottom: 8px;
@@ -277,7 +252,7 @@ const SlotLabel = styled.div`
 const OptionPill = styled.button<{ $active: boolean; $locked: boolean }>`
   height: 44px;
   padding: 0 12px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   border: 3px solid ${({ theme, $active }) => ($active ? theme.colors.outline : theme.colors.border)};
   background: ${({ theme, $active }) => ($active ? theme.colors.gold : theme.colors.surface)};
@@ -287,7 +262,7 @@ const OptionPill = styled.button<{ $active: boolean; $locked: boolean }>`
 `
 
 const SwatchLabel = styled.div`
-  font-size: 10px;
+  font-size: 12px;
   color: ${({ theme }) => theme.colors.textMuted};
   text-align: center;
   margin-top: 4px;
@@ -462,24 +437,17 @@ export default function MyPage() {
             <LevelHead>
               <LevelNum>Lv.{levelPath.level}</LevelNum>
               <LevelSub>
-                {levelPath.currentNodeIndex < levelPath.nodes.length
-                  ? `다음 목표: ${levelPath.nodes[levelPath.currentNodeIndex].label}`
-                  : '모든 단계를 완료했어요!'}
+                {levelPath.currentIndex < levelPath.nodes.length
+                  ? `다음 레슨: ${levelPath.currentIndex + 1}번`
+                  : '모든 레슨을 완료했어요!'}
               </LevelSub>
             </LevelHead>
-            <PathRow>
-              {levelPath.nodes.map((node, i) => (
-                <NodeChip
-                  key={node.id}
-                  $state={node.done ? 'done' : i === levelPath.currentNodeIndex ? 'current' : 'locked'}
-                >
-                  {node.icon} {node.label}
-                  <NodeProgress>
-                    {node.progress}/{node.target}
-                  </NodeProgress>
-                </NodeChip>
-              ))}
-            </PathRow>
+            <p style={{ color: '#6B7290', fontSize: 13, margin: '8px 0 16px' }}>
+              총 {levelPath.nodes.length}개 레슨 중 {levelPath.level}개 완료
+            </p>
+            <Button style={{ width: '100%' }} onClick={() => navigate('/path')}>
+              학습 경로 보기 →
+            </Button>
           </Card>
         </div>
       )}

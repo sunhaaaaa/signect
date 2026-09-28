@@ -31,7 +31,7 @@ const Tile = styled.div<{ $state?: TileState; $pending?: boolean }>`
   align-items: center;
   justify-content: center;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 15px;
+  font-size: 17px;
   color: ${({ $state, theme }) => ($state ? 'white' : theme.colors.text)};
   background: ${({ $state, $pending, theme }) =>
     $state === 'correct'
@@ -52,7 +52,7 @@ const Legend = styled.div`
   justify-content: center;
   flex-wrap: wrap;
   margin-bottom: 16px;
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
 `
 
@@ -72,14 +72,14 @@ const LegendSwatch = styled.span<{ $color: string }>`
 
 const Message = styled.p<{ $tone: 'error' | 'success' | 'muted' }>`
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   margin: 10px 0 0;
   color: ${({ theme, $tone }) =>
     $tone === 'error' ? theme.colors.error : $tone === 'success' ? theme.colors.accent : theme.colors.textMuted};
 `
 
 const AttemptCount = styled.span`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
   display: block;
   text-align: center;

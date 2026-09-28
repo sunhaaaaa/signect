@@ -26,14 +26,14 @@ function pickSessionWords(preferred: string[], fallback: string[]): string[] {
 
 const RoundBadge = styled.span`
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 11px;
+  font-size: 13px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   background: ${({ theme }) => theme.colors.gold};
   padding: 6px 10px;
 `
 
 const SourceNote = styled.p`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
   text-align: center;
   margin: 0 0 16px;

@@ -12,10 +12,10 @@ export const GlobalStyle = createGlobalStyle`
   body {
     margin: 0;
     font-family: ${({ theme }) => theme.fonts.body};
+    background-color: ${({ theme }) => theme.colors.bg};
     background-image:
       repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 4px),
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 4px),
-      linear-gradient(180deg, #8ec9ff 0%, ${({ theme }) => theme.colors.bg} 45%);
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0px, rgba(255, 255, 255, 0.06) 1px, transparent 1px, transparent 4px);
     background-attachment: fixed;
     color: ${({ theme }) => theme.colors.text};
     image-rendering: pixelated;

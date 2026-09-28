@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { PixelMascot } from '../brand/PixelMascot'
 import { useSignReferences } from '../../hooks/useSignReferences'
 import { loadProgress, type ProgressData } from '../../lib/progressStore'
@@ -21,12 +21,33 @@ const Bar = styled.header`
   }
 `
 
+const BackNavButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 900;
+  border: 3px solid ${({ theme }) => theme.colors.outline};
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.text};
+  box-shadow: ${({ theme }) => theme.shadow.cardSm};
+  transition: transform 0.06s steps(1), box-shadow 0.06s steps(1);
+
+  &:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+`
+
 const Logo = styled(NavLink)`
   display: flex;
   align-items: center;
   gap: 10px;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 14px;
+  font-size: 16px;
   color: ${({ theme }) => theme.colors.text};
 `
 
@@ -49,7 +70,7 @@ const Nav = styled.nav`
 const NavItem = styled(NavLink)`
   padding: 8px 12px;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 10px;
+  font-size: 12px;
   white-space: nowrap;
   color: ${({ theme }) => theme.colors.textMuted};
   border: 3px solid transparent;
@@ -62,13 +83,15 @@ const NavItem = styled(NavLink)`
 
   @media (max-width: 480px) {
     padding: 6px 8px;
-    font-size: 9px;
+    font-size: 11px;
   }
 `
 
 export function Header() {
   const { references } = useSignReferences()
   const [progress, setProgress] = useState<ProgressData | null>(null)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     setProgress(loadProgress())
@@ -82,11 +105,17 @@ export function Header() {
 
   return (
     <Bar>
-      <Logo to="/" aria-label="Signect">
-        <Mark>
-          <PixelMascot size={34} handColor={equippedColor} />
-        </Mark>
-      </Logo>
+      {location.pathname === '/' ? (
+        <Logo to="/" aria-label="Signect">
+          <Mark>
+            <PixelMascot size={34} handColor={equippedColor} />
+          </Mark>
+        </Logo>
+      ) : (
+        <BackNavButton aria-label="뒤로가기" onClick={() => navigate(-1)}>
+          ←
+        </BackNavButton>
+      )}
       <Nav>
         <NavItem to="/" end>
           홈

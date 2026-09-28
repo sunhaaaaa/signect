@@ -30,7 +30,7 @@ const Caption = styled.span`
   z-index: 2;
   background: rgba(255, 255, 255, 0.12);
   color: #d7d9f5;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 6px;

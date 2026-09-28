@@ -1,6 +1,7 @@
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision'
 
 const WRIST = 0
+const MIDDLE_MCP = 9
 
 /**
  * Flattens 21 hand landmarks into a 42-dim (x, y) vector, relative to the
@@ -11,12 +12,50 @@ const WRIST = 0
  * AIHub reference dataset (OpenPose-derived) has no z at all — keeping
  * vectors 2D-only means live camera vectors and pre-built reference vectors
  * stay directly comparable.
+ *
+ * Used for consonant/vowel/number matching, where every reference was
+ * captured through this exact function via /dev/capture — live and
+ * reference vectors are self-consistent by construction, so this is left
+ * untouched rather than switched to the hand-scaled variant below (which
+ * would require re-capturing all of them).
  */
 export function normalizeLandmarks(landmarks: NormalizedLandmark[]): number[] {
   const wrist = landmarks[WRIST]
   const vector: number[] = []
   for (const point of landmarks) {
     vector.push(point.x - wrist.x, point.y - wrist.y)
+  }
+  return vector
+}
+
+/** Euclidean distance from the wrist to the middle-finger MCP knuckle — a
+ * roughly constant "bone length" reference usable to cancel out hand size
+ * in pixels, which otherwise varies with camera resolution and the signer's
+ * distance from the camera. */
+function handSpan(points: { x: number; y: number }[]): number {
+  const wrist = points[WRIST]
+  const mid = points[MIDDLE_MCP]
+  const span = Math.hypot(mid.x - wrist.x, mid.y - wrist.y)
+  return span > 1e-6 ? span : 1
+}
+
+/**
+ * Same as {@link normalizeLandmarks}, but additionally divides by hand span
+ * — genuine scale invariance, not just cosine similarity's built-in
+ * invariance to a single *uniform* scalar. This matters specifically for
+ * word matching: AIHub's studio camera and a learner's webcam put the hand
+ * at very different apparent sizes (different resolution, different
+ * distance from the lens), and that difference isn't just an overall
+ * magnitude change — MediaPipe's per-axis (x/width, y/height) normalization
+ * makes it anisotropic, which distorts the hand's shape in vector space
+ * unless both sides are re-scaled to a common, hand-intrinsic unit first.
+ */
+export function normalizeLandmarksScaled(landmarks: NormalizedLandmark[]): number[] {
+  const wrist = landmarks[WRIST]
+  const span = handSpan(landmarks)
+  const vector: number[] = []
+  for (const point of landmarks) {
+    vector.push((point.x - wrist.x) / span, (point.y - wrist.y) / span)
   }
   return vector
 }
