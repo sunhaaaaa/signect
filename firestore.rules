@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// Signect Firestore security rules.
+// Deploy with: firebase deploy --only firestore:rules
+// (needs a firebase.json pointing "firestore.rules" at this file, and the
+// Firebase CLI logged into the same project — see README/기획서 for setup.)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid} — profile (displayName, level, points, streak, mascot
+    // items). Only the owner can write; only the owner can read the full
+    // doc (a future leaderboard should read a trimmed public projection
+    // instead of relying on open read access here).
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // users/{uid}/progress/summary — mirrors the local ProgressData shape
+      // (mastered words, word list, study time, game counts).
+      match /progress/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // users/{uid}/dailyQuests/{date}, weeklyQuests/{weekId}
+      match /dailyQuests/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+      match /weeklyQuests/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // leaderboardWeekly/{weekId}/entries/{uid} — everyone signed in can
+    // read the board; each user can only write their own entry.
+    match /leaderboardWeekly/{weekId}/entries/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Everything else is closed by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

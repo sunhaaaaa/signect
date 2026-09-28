@@ -8,8 +8,10 @@ import { useSignMatch } from '../hooks/useSignMatch'
 import { useSignReferences } from '../hooks/useSignReferences'
 import { useWordMotionReference } from '../hooks/useWordMotionReference'
 import { useMotionRecorder } from '../hooks/useMotionRecorder'
+import { useStudyTimer } from '../hooks/useStudyTimer'
 import { dtwScore } from '../lib/dtw'
 import { DEFAULT_MATCH_THRESHOLD } from '../lib/signMatcher'
+import { markMastered, toggleWordListEntry, isInWordList } from '../lib/progressStore'
 import { SignAnimationPlayer } from '../components/learn/SignAnimationPlayer'
 import { StaticHandGuide } from '../components/learn/StaticHandGuide'
 import {
@@ -275,6 +277,7 @@ const NavRow = styled.div`
 `
 
 export default function Learn() {
+  useStudyTimer()
   const { videoRef, isActive, error, start } = useWebcam()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const { landmarks, handedness, isModelLoading, modelError } = useHandTracking(
@@ -361,7 +364,9 @@ export default function Learn() {
       motion.stop()
       if (motion.sequence.length >= 5 && referenceSequence && referenceSequence.length >= 5) {
         const s = dtwScore(motion.sequence, referenceSequence)
-        setAttempt({ score: s, isMatch: s >= DEFAULT_MATCH_THRESHOLD })
+        const matched = s >= DEFAULT_MATCH_THRESHOLD
+        setAttempt({ score: s, isMatch: matched })
+        if (matched && currentItem) markMastered(currentItem.category, currentItem.label)
       }
     } else {
       setAttempt(null)
@@ -372,6 +377,28 @@ export default function Learn() {
   const staticStatus = !hasHand || !hasReference ? 'idle' : isMatch ? 'correct' : 'incorrect'
   const wordStatus = attempt ? (attempt.isMatch ? 'correct' : 'incorrect') : 'idle'
   const status = isWordTab ? wordStatus : staticStatus
+
+  // Static (지숫자/지문자) matching runs every frame — mark mastered once per
+  // item the first time it goes correct, instead of spamming localStorage.
+  const masteredRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (isWordTab || !currentItem || !isMatch) return
+    const key = `${currentItem.category}:${currentItem.label}`
+    if (masteredRef.current.has(key)) return
+    masteredRef.current.add(key)
+    markMastered(currentItem.category, currentItem.label)
+  }, [isWordTab, currentItem, isMatch])
+
+  const [inWordList, setInWordList] = useState(false)
+  useEffect(() => {
+    setInWordList(isWordTab && !!currentItem ? isInWordList(currentItem.label) : false)
+  }, [isWordTab, currentItem])
+
+  const handleToggleWordList = () => {
+    if (!currentItem) return
+    const { added } = toggleWordListEntry(currentItem.label)
+    setInWordList(added)
+  }
 
   const totalWordCount = useMemo(
     () => new Set(references.filter((r) => r.category === 'word').map((r) => r.label)).size,
@@ -536,6 +563,13 @@ export default function Learn() {
                 </Button>
               )}
             </NavRow>
+            {isWordTab && currentItem && (
+              <NavRow>
+                <Button $variant={inWordList ? 'accent' : 'secondary'} style={{ flex: 1 }} onClick={handleToggleWordList}>
+                  {inWordList ? '★ 내 단어장에 있음' : '☆ 내 단어장에 추가'}
+                </Button>
+              </NavRow>
+            )}
             <NavRow style={{ marginBottom: 0 }}>
               <Button $variant="secondary" style={{ flex: 1 }} onClick={goPrev}>
                 ← 이전

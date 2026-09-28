@@ -1,6 +1,11 @@
+import { useEffect, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { NavLink } from 'react-router-dom'
-import { PixelLogoMark } from './PixelLogoMark'
+import { PixelMascot } from '../brand/PixelMascot'
+import { useSignReferences } from '../../hooks/useSignReferences'
+import { loadProgress, type ProgressData } from '../../lib/progressStore'
+import { buildLevelPath } from '../../lib/levelPath'
+import { resolveEquippedItems } from '../../lib/mascotItems'
 
 const Bar = styled.header`
   display: flex;
@@ -29,14 +34,7 @@ const Mark = styled.span`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
-  border: 3px solid ${({ theme }) => theme.colors.outline};
-  background: ${({ theme }) => theme.colors.gold};
-  color: ${({ theme }) => theme.colors.outline};
-  font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 13px;
+  flex-shrink: 0;
 `
 
 const Nav = styled.nav`
@@ -69,18 +67,31 @@ const NavItem = styled(NavLink)`
 `
 
 export function Header() {
+  const { references } = useSignReferences()
+  const [progress, setProgress] = useState<ProgressData | null>(null)
+
+  useEffect(() => {
+    setProgress(loadProgress())
+  }, [])
+
+  const level = useMemo(
+    () => (progress ? buildLevelPath(references, progress).level : 0),
+    [references, progress],
+  )
+  const equippedColor = resolveEquippedItems(progress?.equippedMascotItems, level).palette.value
+
   return (
     <Bar>
-      <Logo to="/">
+      <Logo to="/" aria-label="Signect">
         <Mark>
-          <PixelLogoMark size={13} />
+          <PixelMascot size={34} handColor={equippedColor} />
         </Mark>
-        Signect
       </Logo>
       <Nav>
         <NavItem to="/" end>
           홈
         </NavItem>
+        <NavItem to="/dictionary">수어사전</NavItem>
         <NavItem to="/learn">학습하기</NavItem>
         <NavItem to="/games">게임</NavItem>
         <NavItem to="/mypage">마이페이지</NavItem>

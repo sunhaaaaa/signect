@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
+import { loadProgress, quizAccuracy, type ProgressData } from '../../lib/progressStore'
 
 const Header = styled.div`
   text-align: center;
@@ -109,14 +111,19 @@ const games = [
   },
 ]
 
-const stats = [
-  { value: 12, label: '스도쿠 클리어', color: '#3B82F6' },
-  { value: 8, label: '꼬들 성공', color: '#3CB043' },
-  { value: 156, label: '퀴즈 정답', color: '#C98A0C' },
-]
-
 export default function GamesHome() {
   const navigate = useNavigate()
+  const [progress, setProgress] = useState<ProgressData | null>(null)
+
+  useEffect(() => {
+    setProgress(loadProgress())
+  }, [])
+
+  const stats = [
+    { value: progress?.sudokuClears ?? 0, label: '스도쿠 클리어', color: '#3B82F6' },
+    { value: progress?.kkoddleWins ?? 0, label: '꼬들 성공', color: '#3CB043' },
+    { value: progress ? quizAccuracy(progress) : 0, suffix: '%', label: '퀴즈 정답률', color: '#C98A0C' },
+  ]
 
   return (
     <>
@@ -142,7 +149,10 @@ export default function GamesHome() {
       <StatsCard>
         {stats.map((s) => (
           <div key={s.label}>
-            <StatNum $color={s.color}>{s.value}</StatNum>
+            <StatNum $color={s.color}>
+              {s.value}
+              {s.suffix ?? ''}
+            </StatNum>
             <StatLabel>{s.label}</StatLabel>
           </div>
         ))}

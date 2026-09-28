@@ -21,22 +21,40 @@
  *      points marked [-1,-1]) is written to public/data/animations/<seqId>.json
  *      for looped skeleton playback.
  *
+ * AIHub sequence IDs encode their source as NIA_SL_WORD####_<SRC>##_<CAM>,
+ * where <SRC> is SYN (아바타 합성) or REAL (실제 사람 스튜디오 촬영). REAL is the
+ * genuine "실측 데이터" the project's 기획서 claims — SYN was an earlier,
+ * smaller stand-in. This script always prefers REAL over SYN: after merging,
+ * any SYN-derived reference is dropped for a label that also has a
+ * REAL-derived reference (and its now-unused animation file is deleted too).
+ *
+ * INCREMENTAL / disk-constrained workflow: the full REAL keypoint set is
+ * ~150GB+ across 16 numbered chunks, too big to keep all at once on a small
+ * disk. So this script MERGES with whatever is already in OUT_PATH instead
+ * of overwriting it — run it once per downloaded chunk, then delete that
+ * chunk's raw keypoint/morpheme folders; already-merged entries from earlier
+ * chunks stay in OUT_PATH even after their source folders are gone.
+ *
  * Usage:
  *   node scripts/build-word-references.mjs [datasetRoot] [outFile] [animDir]
  *
- * Defaults assume the AIHub "WORD" folder layout:
- *   <datasetRoot>/keypoint/<01|02>/<seqId>/<seqId>_<frame>_keypoints.json
- *   <datasetRoot>/morpheme/<01|02>/<seqId>_morpheme.json
+ * <datasetRoot> must directly contain `morpheme/` plus one numbered folder
+ * per keypoint chunk currently on disk (this matches how AIHub's zips
+ * actually extract — morpheme labels nest under `morpheme/<chunk>/`, but
+ * each keypoint zip extracts straight to `<datasetRoot>/<chunk>/`, no
+ * `keypoint/` wrapper), e.g.:
+ *   <datasetRoot>/<chunk>/<seqId>/<seqId>_<frame>_keypoints.json
+ *   <datasetRoot>/morpheme/<chunk>/<seqId>_morpheme.json
+ * Whatever chunk subfolders exist under `morpheme/` at run time are the ones
+ * processed — no need to list them; download/extract only a few chunks at a
+ * time and re-run.
  */
 import fs from 'node:fs'
 import path from 'node:path'
 
-const DATASET_ROOT =
-  process.argv[2] ||
-  '/Users/tjsgkdia/Downloads/수어 영상/1.Training/WORD'
+const DATASET_ROOT = process.argv[2] || '/Users/tjsgkdia/Desktop/수어 영상/1.Training'
 const OUT_PATH = process.argv[3] || 'public/data/signReferences.word.json'
 const ANIM_DIR = process.argv[4] || 'public/data/animations'
-const FOLDERS = ['01', '02']
 const CONF_THRESHOLD = 0.3
 const WRIST_CONF_MIN = 0.2
 const MIN_VALID_FRAMES = 5
@@ -45,6 +63,26 @@ const POSE_POINT_COUNT = 9 // nose, neck, R/L shoulder, R/L elbow, R/L wrist, mi
 
 function loadJSON(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
+}
+
+function loadExisting(outPath) {
+  if (!fs.existsSync(outPath)) return []
+  try {
+    return JSON.parse(fs.readFileSync(outPath, 'utf8'))
+  } catch {
+    return []
+  }
+}
+
+/** Chunk subfolders currently on disk under <datasetRoot>/morpheme — whatever's there gets processed. */
+function detectChunks(datasetRoot) {
+  const morphemeRoot = path.join(datasetRoot, 'morpheme')
+  if (!fs.existsSync(morphemeRoot)) return []
+  return fs
+    .readdirSync(morphemeRoot, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
+    .sort()
 }
 
 /** Splits a flat OpenPose [x,y,c, x,y,c, ...] array into `count` {x,y,c} points. */
@@ -147,16 +185,27 @@ function processSequence(seqId, keypointDir, morpheme) {
 }
 
 function main() {
-  const results = []
+  const chunks = detectChunks(DATASET_ROOT)
+  if (chunks.length === 0) {
+    console.error(`No morpheme/<chunk> subfolders found under ${DATASET_ROOT}`)
+    console.error('Expected <datasetRoot>/morpheme/<chunk>/ and <datasetRoot>/keypoint/<chunk>/ to exist.')
+    process.exit(1)
+  }
+  console.log(`chunks to process: ${chunks.join(', ')}`)
+
+  const newResults = []
   let processed = 0
   let skipped = 0
 
   fs.mkdirSync(ANIM_DIR, { recursive: true })
 
-  for (const folder of FOLDERS) {
-    const morphemeDir = path.join(DATASET_ROOT, 'morpheme', folder)
-    const keypointDir = path.join(DATASET_ROOT, 'keypoint', folder)
-    if (!fs.existsSync(morphemeDir)) continue
+  for (const chunk of chunks) {
+    const morphemeDir = path.join(DATASET_ROOT, 'morpheme', chunk)
+    const keypointDir = path.join(DATASET_ROOT, chunk)
+    if (!fs.existsSync(keypointDir)) {
+      console.warn(`skipping chunk ${chunk}: no ${chunk}/ folder next to morpheme/ (keypoint zip not downloaded/extracted yet)`)
+      continue
+    }
 
     const files = fs.readdirSync(morphemeDir).filter((f) => f.endsWith('_F_morpheme.json'))
 
@@ -171,8 +220,8 @@ function main() {
       }
 
       const id = `word-${seqId}`
-      results.push({ id, label: result.label, category: 'word', vector: result.vector })
-      results.push({
+      newResults.push({ id, label: result.label, category: 'word', vector: result.vector })
+      newResults.push({
         id: `${id}-mirror`,
         label: result.label,
         category: 'word',
@@ -188,12 +237,31 @@ function main() {
     }
   }
 
-  fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true })
-  fs.writeFileSync(OUT_PATH, JSON.stringify(results))
+  // Merge with whatever's already in OUT_PATH (earlier chunks whose raw
+  // source folders may have since been deleted to free disk space).
+  const existing = loadExisting(OUT_PATH)
+  const newIds = new Set(newResults.map((r) => r.id))
+  const merged = [...existing.filter((r) => !newIds.has(r.id)), ...newResults]
 
-  console.log(`processed=${processed} skipped=${skipped} references=${results.length}`)
+  // Prefer REAL (real human footage) over SYN (avatar synthesis) per label.
+  const labelsWithReal = new Set(merged.filter((r) => r.id.includes('_REAL')).map((r) => r.label))
+  const dropped = merged.filter((r) => r.id.includes('_SYN') && labelsWithReal.has(r.label))
+  const final = merged.filter((r) => !(r.id.includes('_SYN') && labelsWithReal.has(r.label)))
+
+  for (const id of new Set(dropped.map((r) => r.id.replace(/-mirror$/, '')))) {
+    const animPath = path.join(ANIM_DIR, `${id}.json`)
+    if (fs.existsSync(animPath)) fs.rmSync(animPath)
+  }
+
+  fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true })
+  fs.writeFileSync(OUT_PATH, JSON.stringify(final))
+
+  const uniqueLabels = new Set(final.map((r) => r.label)).size
+  console.log(`this run: processed=${processed} skipped=${skipped}`)
+  console.log(`SYN entries dropped in favor of REAL: ${dropped.length} (${new Set(dropped.map((r) => r.label)).size} labels)`)
+  console.log(`total references=${final.length}, unique words=${uniqueLabels}`)
   console.log(`references written to ${OUT_PATH}`)
-  console.log(`animations written to ${ANIM_DIR}/ (${processed} files)`)
+  console.log(`animations in ${ANIM_DIR}/`)
 }
 
 main()

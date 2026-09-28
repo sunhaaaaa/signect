@@ -4,6 +4,8 @@ import { theme } from './styles/theme'
 import { GlobalStyle } from './styles/GlobalStyle'
 import { Layout } from './components/layout/Layout'
 import Home from './pages/Home'
+import Login from './pages/Login'
+import Dictionary from './pages/Dictionary'
 import Learn from './pages/Learn'
 import MyPage from './pages/MyPage'
 import GamesHome from './pages/games/GamesHome'
@@ -20,6 +22,8 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dictionary" element={<Dictionary />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/games" element={<GamesHome />} />
             <Route path="/games/sign-sudoku" element={<SignSudoku />} />

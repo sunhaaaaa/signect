@@ -8,7 +8,9 @@ import { useWebcam } from '../../hooks/useWebcam'
 import { useHandTracking } from '../../hooks/useHandTracking'
 import { useSignReferences } from '../../hooks/useSignReferences'
 import { useSignRecognition } from '../../hooks/useSignRecognition'
-import { evaluateGuess, pickRandomWord, type TileState } from '../../lib/wordle'
+import { useStudyTimer } from '../../hooks/useStudyTimer'
+import { recordKkoddleWin } from '../../lib/progressStore'
+import { evaluateGuess, pickRandomWord, pickWordForSeed, todayKey, type TileState } from '../../lib/wordle'
 import { decomposeWord } from '../../lib/hangul'
 
 const MAX_ATTEMPTS = 6
@@ -94,6 +96,7 @@ function tokensEqual(a: string[], b: string[]) {
 }
 
 export default function SignKkoddle() {
+  useStudyTimer()
   const { references, isLoading } = useSignReferences()
 
   const wordPool = useMemo(() => {
@@ -113,8 +116,7 @@ export default function SignKkoddle() {
 
   useEffect(() => {
     if (wordPool.length > 0 && !target) {
-      // TEMP demo default — swap back to pickWordForSeed(wordPool, todayKey()) for real daily rotation.
-      setTarget('간장')
+      setTarget(pickWordForSeed(wordPool, todayKey()))
     }
   }, [wordPool, target])
 
@@ -123,6 +125,14 @@ export default function SignKkoddle() {
   const isWin = guesses.some((g) => tokensEqual(g, targetTokens))
   const isLose = !isWin && guesses.length >= MAX_ATTEMPTS
   const isOver = isWin || isLose
+
+  const wonRef = useRef(false)
+  useEffect(() => {
+    if (isWin && !wonRef.current) {
+      wonRef.current = true
+      recordKkoddleWin()
+    }
+  }, [isWin])
 
   const { videoRef, isActive, error, start } = useWebcam()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -161,6 +171,7 @@ export default function SignKkoddle() {
     setGuesses([])
     setCurrentGuess([])
     setMessage(null)
+    wonRef.current = false
   }
 
   const rows = Array.from({ length: MAX_ATTEMPTS }, (_, i) => guesses[i] ?? (i === guesses.length ? currentGuess : null))

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
 import { GameShell } from './GameShell'
 import { Card } from '../../components/ui/Card'
@@ -8,6 +8,8 @@ import { useWebcam } from '../../hooks/useWebcam'
 import { useHandTracking } from '../../hooks/useHandTracking'
 import { useSignReferences } from '../../hooks/useSignReferences'
 import { useSignRecognition } from '../../hooks/useSignRecognition'
+import { useStudyTimer } from '../../hooks/useStudyTimer'
+import { recordSudokuClear } from '../../lib/progressStore'
 import { generateSolvedGrid, makePuzzle, isBoardComplete, type Difficulty, type Grid } from '../../lib/sudoku'
 
 function createGame(difficulty: Difficulty) {
@@ -108,15 +110,18 @@ const DIFFICULTIES: { key: Difficulty; label: string }[] = [
 ]
 
 export default function SignSudoku() {
+  useStudyTimer()
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [game, setGame] = useState(() => createGame('easy'))
   const [selected, setSelected] = useState<[number, number] | null>(null)
   const { solution, puzzle, board } = game
+  const clearedRef = useRef(false)
 
   const newGame = (nextDifficulty: Difficulty) => {
     setDifficulty(nextDifficulty)
     setGame(createGame(nextDifficulty))
     setSelected(null)
+    clearedRef.current = false
   }
 
   const setCell = (row: number, col: number, value: number) => {
@@ -129,6 +134,13 @@ export default function SignSudoku() {
   }
 
   const isWin = useMemo(() => isBoardComplete(board, solution), [board, solution])
+
+  useEffect(() => {
+    if (isWin && !clearedRef.current) {
+      clearedRef.current = true
+      recordSudokuClear()
+    }
+  }, [isWin])
 
   const { videoRef, isActive, error, start } = useWebcam()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)

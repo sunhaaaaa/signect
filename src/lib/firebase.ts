@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeApp, type FirebaseApp } from 'firebase/app'
+import { getAuth, type Auth } from 'firebase/auth'
+import { getFirestore, type Firestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,8 +11,22 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-const app = initializeApp(firebaseConfig)
+// Firebase isn't set up yet until every one of these is filled in (see
+// .env.example / .env.local). Until then, skip initialization entirely
+// instead of letting getAuth() throw on a missing API key and white-screen
+// every page — login-related UI checks this flag and degrades gracefully.
+export const isFirebaseConfigured = Object.values(firebaseConfig).every(
+  (value) => typeof value === 'string' && value.length > 0,
+)
 
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export default app
+let app: FirebaseApp | null = null
+let auth: Auth | null = null
+let db: Firestore | null = null
+
+if (isFirebaseConfigured) {
+  app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+  db = getFirestore(app)
+}
+
+export { app, auth, db }
