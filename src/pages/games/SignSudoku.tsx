@@ -39,7 +39,7 @@ const Cell = styled.button<{
   align-items: center;
   justify-content: center;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 13px;
+  font-size: 15px;
   color: ${({ $given, $wrong, theme }) =>
     $wrong ? theme.colors.error : $given ? theme.colors.text : theme.colors.primaryDark};
   background: ${({ $selected, theme }) => ($selected ? theme.colors.gold : theme.colors.surface)};
@@ -63,7 +63,7 @@ const PaletteCell = styled.button`
   background: ${({ theme }) => theme.colors.surface};
   box-shadow: ${({ theme }) => theme.shadow.cardSm};
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 13px;
+  font-size: 15px;
   transition: transform 0.06s steps(1), box-shadow 0.06s steps(1);
 
   &:active:not(:disabled) {
@@ -84,7 +84,7 @@ const DifficultyRow = styled.div`
 const DifficultyButton = styled.button<{ $active: boolean }>`
   padding: 8px 12px;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 9px;
+  font-size: 11px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   background: ${({ theme, $active }) => ($active ? theme.colors.gold : theme.colors.surface)};
   color: ${({ theme }) => theme.colors.text};

@@ -45,7 +45,7 @@ const LiveBadge = styled.span`
   border: 2px solid ${({ theme }) => theme.colors.outline};
   color: white;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 9px;
+  font-size: 11px;
   padding: 4px 8px;
 `
 
@@ -57,7 +57,7 @@ const StatusBadge = styled.span`
   background: rgba(0, 0, 0, 0.55);
   border: 2px solid ${({ theme }) => theme.colors.outline};
   color: #f1f1f5;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 4px 8px;
 `
@@ -71,7 +71,7 @@ const FooterBadgeSlot = styled.div`
 
 const Placeholder = styled.div`
   color: #9aa0c3;
-  font-size: 13px;
+  font-size: 15px;
   text-align: center;
   padding: 0 16px;
   display: flex;

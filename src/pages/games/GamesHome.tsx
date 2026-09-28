@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { loadProgress, quizAccuracy, type ProgressData } from '../../lib/progressStore'
 
 const Header = styled.div`
   text-align: center;
@@ -11,14 +9,10 @@ const Header = styled.div`
 `
 
 const Title = styled.h1`
-  font-size: 22px;
+  font-size: clamp(32px, 9vw, 56px);
   margin: 0 0 12px;
   color: ${({ theme }) => theme.colors.primaryDark};
-`
-
-const Sub = styled.p`
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin: 0;
+  text-shadow: 4px 4px 0 ${({ theme }) => theme.colors.outline};
 `
 
 const Grid = styled.div`
@@ -46,39 +40,20 @@ const GameIcon = styled.div<{ $bg: string }>`
 
 const GameTitle = styled.h3`
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: 15px;
 `
 
 const GameDesc = styled.p`
   margin: 0 0 12px;
-  font-size: 13px;
+  font-size: 15px;
   color: ${({ theme }) => theme.colors.textMuted};
 `
 
 const Difficulty = styled.span`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
   display: block;
   margin-bottom: 12px;
-`
-
-const StatsCard = styled(Card)`
-  margin-top: 24px;
-  display: flex;
-  justify-content: space-around;
-  text-align: center;
-`
-
-const StatNum = styled.div<{ $color: string }>`
-  font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 20px;
-  color: ${({ $color }) => $color};
-`
-
-const StatLabel = styled.div`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.textMuted};
-  margin-top: 4px;
 `
 
 const games = [
@@ -113,23 +88,11 @@ const games = [
 
 export default function GamesHome() {
   const navigate = useNavigate()
-  const [progress, setProgress] = useState<ProgressData | null>(null)
-
-  useEffect(() => {
-    setProgress(loadProgress())
-  }, [])
-
-  const stats = [
-    { value: progress?.sudokuClears ?? 0, label: '스도쿠 클리어', color: '#3B82F6' },
-    { value: progress?.kkoddleWins ?? 0, label: '꼬들 성공', color: '#3CB043' },
-    { value: progress ? quizAccuracy(progress) : 0, suffix: '%', label: '퀴즈 정답률', color: '#C98A0C' },
-  ]
 
   return (
     <>
       <Header>
-        <Title>게임으로 복습하기</Title>
-        <Sub>게임을 통해 배운 수어를 복습하고 실력을 향상시키세요</Sub>
+        <Title>Game</Title>
       </Header>
 
       <Grid>
@@ -145,18 +108,6 @@ export default function GamesHome() {
           </Card>
         ))}
       </Grid>
-
-      <StatsCard>
-        {stats.map((s) => (
-          <div key={s.label}>
-            <StatNum $color={s.color}>
-              {s.value}
-              {s.suffix ?? ''}
-            </StatNum>
-            <StatLabel>{s.label}</StatLabel>
-          </div>
-        ))}
-      </StatsCard>
     </>
   )
 }

@@ -101,12 +101,25 @@ function meanConfidence(points) {
   return points.reduce((sum, p) => sum + p.c, 0) / points.length
 }
 
-/** Wrist-relative (x, y) flattened to 42 numbers, for matching. */
+const MIDDLE_MCP = 9
+
+/** Wrist-to-middle-MCP pixel distance — a hand-intrinsic scale reference,
+ * used to cancel out the gap between AIHub's studio camera pixel scale and
+ * a learner's own webcam (see src/lib/handVector.ts's handSpan). */
+function handSpan(points) {
+  const wrist = points[0]
+  const mid = points[MIDDLE_MCP]
+  const span = Math.hypot(mid.x - wrist.x, mid.y - wrist.y)
+  return span > 1e-6 ? span : 1
+}
+
+/** Wrist-relative (x, y), scaled by hand span, flattened to 42 numbers. */
 function normalize2D(points) {
   const wrist = points[0]
+  const span = handSpan(points)
   const vector = []
   for (const p of points) {
-    vector.push(p.x - wrist.x, p.y - wrist.y)
+    vector.push((p.x - wrist.x) / span, (p.y - wrist.y) / span)
   }
   return vector
 }

@@ -8,7 +8,7 @@ export const Button = styled.button<{ $variant?: 'primary' | 'secondary' | 'acce
   padding: 12px 18px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 12px;
+  font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   box-shadow:
