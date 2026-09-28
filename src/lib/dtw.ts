@@ -15,18 +15,31 @@ export function dtwAlignedSimilarity(seqA: number[][], seqB: number[][]): number
   const cost = (a: number[], b: number[]) => 1 - cosineSimilarity(a, b)
 
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(Infinity))
+  // Tracks the actual number of steps taken to reach dp[i][j], since the
+  // optimal warping path's real length varies (anywhere from max(n,m) to
+  // n+m-1 depending on how much diagonal-stepping it uses) — dividing by a
+  // fixed n+m systematically under-counts steps and inflates the average
+  // similarity, more so for attempts whose length differs from the
+  // reference's.
+  const steps: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0))
   dp[0][0] = 0
 
   for (let i = 1; i <= n; i++) {
     for (let j = 1; j <= m; j++) {
       const c = cost(seqA[i - 1], seqB[j - 1])
-      dp[i][j] = c + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
+      const candidates: [number, number][] = [
+        [dp[i - 1][j], steps[i - 1][j]],
+        [dp[i][j - 1], steps[i][j - 1]],
+        [dp[i - 1][j - 1], steps[i - 1][j - 1]],
+      ]
+      let best = candidates[0]
+      for (const candidate of candidates) if (candidate[0] < best[0]) best = candidate
+      dp[i][j] = c + best[0]
+      steps[i][j] = best[1] + 1
     }
   }
 
-  // Normalize by path length (n + m is a standard, cheap approximation of
-  // the true optimal path length) to get an average per-step cost.
-  const avgCost = dp[n][m] / (n + m)
+  const avgCost = dp[n][m] / steps[n][m]
   const avgSimilarity = 1 - avgCost
   return avgSimilarity
 }

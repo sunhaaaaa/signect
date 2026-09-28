@@ -39,7 +39,7 @@ const KakaoButton = styled.button`
   background: #fee500;
   color: #191600;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 11px;
+  font-size: 13px;
   box-shadow: ${({ theme }) => theme.shadow.cardSm};
   transition:
     transform 0.06s steps(1),
@@ -58,7 +58,7 @@ const KakaoButton = styled.button`
 
 const Notice = styled.p<{ $tone?: 'error' }>`
   margin: 12px 0 0;
-  font-size: 12px;
+  font-size: 14px;
   text-align: center;
   color: ${({ theme, $tone }) => ($tone === 'error' ? theme.colors.error : theme.colors.textMuted)};
 `

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import styled from 'styled-components'
+import { useSearchParams } from 'react-router-dom'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { useWebcam } from '../hooks/useWebcam'
@@ -14,6 +15,7 @@ import { DEFAULT_MATCH_THRESHOLD } from '../lib/signMatcher'
 import { markMastered, toggleWordListEntry, isInWordList } from '../lib/progressStore'
 import { SignAnimationPlayer } from '../components/learn/SignAnimationPlayer'
 import { StaticHandGuide } from '../components/learn/StaticHandGuide'
+import { PixelGlyph, TOPIC_ICON_KIND, topicGlyphKind } from '../components/brand/PixelTopicIcon'
 import {
   LEARN_TABS,
   LETTER_CURRICULUM,
@@ -32,18 +34,12 @@ const TabBar = styled.div`
 const TabButton = styled.button<{ $active: boolean }>`
   padding: 10px 14px;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 11px;
+  font-size: 13px;
   border: 3px solid ${({ theme }) => theme.colors.outline};
   background: ${({ theme, $active }) => ($active ? theme.colors.gold : theme.colors.surface)};
   color: ${({ theme }) => theme.colors.text};
   box-shadow: ${({ theme, $active }) => ($active ? 'none' : theme.shadow.cardSm)};
   transform: ${({ $active }) => ($active ? 'translate(3px, 3px)' : 'none')};
-`
-
-const TabCount = styled.span`
-  opacity: 0.7;
-  margin-left: 6px;
-  font-size: 9px;
 `
 
 const TopicGrid = styled.div`
@@ -80,16 +76,16 @@ const TopicIcon = styled.span`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  color: ${({ theme }) => theme.colors.outline};
 `
 
 const TopicName = styled.div`
   font-weight: 700;
-  font-size: 13px;
+  font-size: 15px;
 `
 
 const TopicCount = styled.div`
-  font-size: 12px;
+  font-size: 14px;
   color: ${({ theme }) => theme.colors.textMuted};
   margin-top: 2px;
 `
@@ -98,10 +94,23 @@ const BackRow = styled.button`
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 16px;
+`
+
+const BackButton = styled.button`
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  font-family: ${({ theme }) => theme.fonts.heading};
+  font-size: 13px;
+  border: 3px solid ${({ theme }) => theme.colors.outline};
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.textMuted};
+  box-shadow: ${({ theme }) => theme.shadow.cardSm};
+  margin-right: 4px;
 `
 
 const CurrentTopicLabel = styled.span`
@@ -109,24 +118,6 @@ const CurrentTopicLabel = styled.span`
   font-weight: 600;
   margin-left: 10px;
 `
-
-const TOPIC_ICONS: Record<string, string> = {
-  전체: '📚',
-  '기관·장소': '🏢',
-  '가족·관계': '👪',
-  '사람·직업': '👤',
-  음식: '🍚',
-  '동물·자연': '🌿',
-  '색깔·외형': '🎨',
-  '감정·상태': '😊',
-  '시간·날짜': '🕒',
-  '학교·교육': '🎓',
-  '복지·장애': '🤝',
-  '사회·법률·행정': '⚖️',
-  '사물·생활': '🧺',
-  '동작·묘사': '🏃',
-  기타: '🗂️',
-}
 
 const WordHeader = styled.div`
   display: flex;
@@ -143,7 +134,7 @@ const WordTitle = styled.h1`
 `
 
 const WordProgressText = styled.span`
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.textMuted};
   white-space: nowrap;
@@ -177,7 +168,7 @@ const CompareGrid = styled.div`
 `
 
 const PanelLabel = styled.div`
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.textMuted};
   margin-bottom: 8px;
@@ -210,7 +201,7 @@ const ScoreBadge = styled.span<{ $status: 'idle' | 'correct' | 'incorrect' }>`
     $status === 'correct' ? theme.colors.success : $status === 'incorrect' ? theme.colors.error : 'rgba(0, 0, 0, 0.55)'};
   border: 2px solid ${({ theme }) => theme.colors.outline};
   color: white;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   padding: 4px 10px;
 `
@@ -240,7 +231,7 @@ const LiveBadge = styled.span`
   border: 2px solid ${({ theme }) => theme.colors.outline};
   color: white;
   font-family: ${({ theme }) => theme.fonts.heading};
-  font-size: 9px;
+  font-size: 11px;
   padding: 4px 8px;
 `
 
@@ -252,20 +243,20 @@ const ModelBadge = styled.span`
   background: rgba(0, 0, 0, 0.55);
   border: 2px solid ${({ theme }) => theme.colors.outline};
   color: #f1f1f5;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   padding: 4px 8px;
 `
 
 const Placeholder = styled.p`
   color: #9aa0c3;
-  font-size: 14px;
+  font-size: 16px;
 `
 
 const HintList = styled.ul`
   margin: 0 0 16px;
   padding-left: 18px;
-  font-size: 13px;
+  font-size: 15px;
   color: ${({ theme }) => theme.colors.textMuted};
   line-height: 1.7;
 `
@@ -274,6 +265,72 @@ const NavRow = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
+`
+
+const IntroGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  max-width: 640px;
+  margin: 20px auto;
+`
+
+const IntroCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 16px;
+  border: 3px solid ${({ theme }) => theme.colors.outline};
+  background: ${({ theme }) => theme.colors.surface};
+  box-shadow: ${({ theme }) => theme.shadow.cardSm};
+  transition: transform 0.06s steps(1), box-shadow 0.06s steps(1);
+
+  &:active {
+    transform: translate(3px, 3px);
+    box-shadow: none;
+  }
+`
+
+const IntroIcon = styled.span`
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  border: 3px solid ${({ theme }) => theme.colors.outline};
+  background: ${({ theme }) => theme.colors.gold};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.outline};
+`
+
+const IntroLabel = styled.div`
+  font-family: ${({ theme }) => theme.fonts.heading};
+  font-size: 15px;
+`
+
+const WordListGrid = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+`
+
+const WordListChip = styled.button`
+  padding: 10px 14px;
+  font-family: ${({ theme }) => theme.fonts.body};
+  font-weight: 700;
+  font-size: 16px;
+  border: 3px solid ${({ theme }) => theme.colors.outline};
+  background: ${({ theme }) => theme.colors.surface};
+  box-shadow: ${({ theme }) => theme.shadow.cardSm};
+  transition: transform 0.06s steps(1), box-shadow 0.06s steps(1);
+
+  &:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
 `
 
 export default function Learn() {
@@ -286,52 +343,191 @@ export default function Learn() {
     isActive,
   )
   const { references, isLoading: isReferencesLoading } = useSignReferences()
+  const [searchParams] = useSearchParams()
 
+  // 대분류(topic) → 소분류(subtopic) breakdown. A topic with only one
+  // subtopic (small categories where subtopic === topic, see
+  // classify_word_topics.py) has no useful drill-down step, so it's flagged
+  // via subtopics.length <= 1 and skipped straight to the word list.
   const wordTopics = useMemo(() => {
-    const byTopic = new Map<string, Set<string>>()
+    const byTopic = new Map<string, { all: Set<string>; subtopics: Map<string, Set<string>> }>()
     for (const r of references) {
       if (r.category !== 'word') continue
       const topic = r.topic ?? '기타'
-      if (!byTopic.has(topic)) byTopic.set(topic, new Set())
-      byTopic.get(topic)!.add(r.label)
+      const subtopic = r.subtopic ?? topic
+      if (!byTopic.has(topic)) byTopic.set(topic, { all: new Set(), subtopics: new Map() })
+      const entry = byTopic.get(topic)!
+      entry.all.add(r.label)
+      if (!entry.subtopics.has(subtopic)) entry.subtopics.set(subtopic, new Set())
+      entry.subtopics.get(subtopic)!.add(r.label)
     }
     return Array.from(byTopic.entries())
-      .map(([topic, labels]) => ({ topic, count: labels.size }))
+      .map(([topic, { all, subtopics }]) => ({
+        topic,
+        count: all.size,
+        subtopics: Array.from(subtopics.entries())
+          .map(([subtopic, labels]) => ({ subtopic, count: labels.size }))
+          .sort((a, b) => b.count - a.count),
+      }))
       .sort((a, b) => b.count - a.count)
   }, [references])
 
-  const [tab, setTab] = useState<LearnTab>('word')
+  // null = the very first landing screen (choose 지숫자/지문자/단어, no
+  // category content shown yet). Once a tab is picked it's never null again
+  // for that visit — switchTab lets you swap between the three afterwards.
+  const [tab, setTab] = useState<LearnTab | null>(null)
   const [wordTopic, setWordTopic] = useState<string | null>(null)
+  const [wordSubtopic, setWordSubtopic] = useState<string | null>(null)
+  // 지문자 only: split into 자음/모음 before showing that group's item list.
+  const [letterGroup, setLetterGroup] = useState<'consonant' | 'vowel' | 'all' | null>(null)
+  // Every tab shows a LIST of its items before the single-item practice
+  // screen — `started` gates that final step, for number/letter/word alike.
+  const [started, setStarted] = useState(false)
   const [index, setIndex] = useState(0)
 
   const wordCurriculum = useMemo<CurriculumItem[]>(() => {
-    if (wordTopic === null) return []
+    if (wordTopic === null || wordSubtopic === null) return []
     const labels = Array.from(
       new Set(
         references
-          .filter((r) => r.category === 'word' && (wordTopic === 'all' || (r.topic ?? '기타') === wordTopic))
+          .filter((r) => {
+            if (r.category !== 'word') return false
+            if (wordTopic === 'all') return true
+            if ((r.topic ?? '기타') !== wordTopic) return false
+            if (wordSubtopic === 'all') return true
+            return (r.subtopic ?? r.topic ?? '기타') === wordSubtopic
+          })
           .map((r) => r.label),
       ),
     )
     labels.sort((a, b) => a.localeCompare(b, 'ko'))
     return labels.map((label) => ({ id: `word-${label}`, label, category: 'word' as const }))
-  }, [references, wordTopic])
+  }, [references, wordTopic, wordSubtopic])
+
+  const letterCurriculum = useMemo(
+    () =>
+      letterGroup && letterGroup !== 'all'
+        ? LETTER_CURRICULUM.filter((item) => item.category === letterGroup)
+        : LETTER_CURRICULUM,
+    [letterGroup],
+  )
 
   const curriculum: CurriculumItem[] =
-    tab === 'number' ? NUMBER_CURRICULUM : tab === 'letter' ? LETTER_CURRICULUM : wordCurriculum
+    tab === 'number' ? NUMBER_CURRICULUM : tab === 'letter' ? letterCurriculum : wordCurriculum
   const currentItem = curriculum[index]
   const showingWordPicker = tab === 'word' && wordTopic === null
+  const showingSubtopicPicker = tab === 'word' && wordTopic !== null && wordTopic !== 'all' && wordSubtopic === null
+  const showingWordListPicker = tab === 'word' && wordTopic !== null && wordSubtopic !== null && !started
+  const showingLetterGroupPicker = tab === 'letter' && letterGroup === null
+  const showingItemListPicker =
+    (tab === 'number' || (tab === 'letter' && letterGroup !== null)) && !started
 
   const switchTab = (nextTab: LearnTab) => {
     setTab(nextTab)
     setIndex(0)
-    if (nextTab === 'word') setWordTopic(null)
+    setStarted(false)
+    if (nextTab === 'word') {
+      setWordTopic(null)
+      setWordSubtopic(null)
+    }
+    if (nextTab === 'letter') setLetterGroup(null)
+  }
+
+  const chooseLetterGroup = (group: 'consonant' | 'vowel' | 'all') => {
+    setLetterGroup(group)
+    setStarted(false)
+    setIndex(0)
+  }
+
+  const backToLetterGroups = () => {
+    setLetterGroup(null)
+    setStarted(false)
+    setIndex(0)
+  }
+
+  const backToStart = () => {
+    setTab(null)
+    setWordTopic(null)
+    setWordSubtopic(null)
+    setLetterGroup(null)
+    setStarted(false)
+    setIndex(0)
   }
 
   const chooseTopic = (topic: string) => {
+    setIndex(0)
+    setStarted(false)
+    if (topic === 'all') {
+      setWordTopic('all')
+      setWordSubtopic('all')
+      return
+    }
     setWordTopic(topic)
+    const entry = wordTopics.find((t) => t.topic === topic)
+    // A topic with only one subtopic has nothing to drill into — go
+    // straight to its word list instead of showing a single-card screen.
+    setWordSubtopic(!entry || entry.subtopics.length <= 1 ? 'all' : null)
+  }
+
+  const chooseSubtopic = (subtopic: string) => {
+    setWordSubtopic(subtopic)
+    setStarted(false)
     setIndex(0)
   }
+
+  const chooseWord = (label: string) => {
+    const foundIndex = wordCurriculum.findIndex((item) => item.label === label)
+    setIndex(foundIndex >= 0 ? foundIndex : 0)
+    setStarted(true)
+  }
+
+  const chooseItem = (label: string) => {
+    const list = tab === 'number' ? NUMBER_CURRICULUM : letterCurriculum
+    const foundIndex = list.findIndex((item) => item.label === label)
+    setIndex(foundIndex >= 0 ? foundIndex : 0)
+    setStarted(true)
+  }
+
+  const backToTopics = () => {
+    setWordTopic(null)
+    setWordSubtopic(null)
+    setStarted(false)
+    setIndex(0)
+  }
+
+  const backToSubtopics = () => {
+    setWordSubtopic(null)
+    setStarted(false)
+    setIndex(0)
+  }
+
+  const backToWordList = () => setStarted(false)
+  const backToItemList = () => setStarted(false)
+
+  // Lets other screens (the level-path node map) deep-link straight past
+  // the intro screen into a specific tab/topic via ?tab=&topic=, landing on
+  // that item-list screen (not started=true — the list-before-practice gate
+  // still applies here same as a normal click-through would).
+  useEffect(() => {
+    if (isReferencesLoading || tab !== null) return
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'number') {
+      setTab('number')
+    } else if (tabParam === 'letter') {
+      setTab('letter')
+      setLetterGroup('all')
+    } else if (tabParam === 'word') {
+      setTab('word')
+      const topicParam = searchParams.get('topic')
+      if (topicParam) {
+        chooseTopic(topicParam)
+      } else {
+        setWordTopic('all')
+        setWordSubtopic('all')
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReferencesLoading, searchParams, tab])
 
   const targets = useMemo(
     () =>
@@ -400,35 +596,31 @@ export default function Learn() {
     setInWordList(added)
   }
 
-  const totalWordCount = useMemo(
-    () => new Set(references.filter((r) => r.category === 'word').map((r) => r.label)).size,
-    [references],
-  )
-
-  const counts = useMemo(() => {
-    const capturedCount = (items: CurriculumItem[]) =>
-      items.filter((item) => references.some((r) => r.category === item.category && r.label === item.label)).length
-    return {
-      number: capturedCount(NUMBER_CURRICULUM),
-      letter: capturedCount(LETTER_CURRICULUM),
-      word: totalWordCount,
-    }
-  }, [references, totalWordCount])
-
-  const totals = { number: NUMBER_CURRICULUM.length, letter: LETTER_CURRICULUM.length, word: totalWordCount }
-
   const goPrev = () => setIndex((i) => (i - 1 + curriculum.length) % Math.max(curriculum.length, 1))
   const goNext = () => setIndex((i) => (i + 1) % Math.max(curriculum.length, 1))
+
+  if (tab === null) {
+    return (
+      <IntroGrid>
+        {LEARN_TABS.map((t) => (
+          <IntroCard key={t.key} onClick={() => switchTab(t.key)}>
+            <IntroIcon>
+              <PixelGlyph kind={topicGlyphKind(`intro:${t.key}`)} />
+            </IntroIcon>
+            <IntroLabel>{t.label}</IntroLabel>
+          </IntroCard>
+        ))}
+      </IntroGrid>
+    )
+  }
 
   return (
     <>
       <TabBar>
+        <BackButton onClick={backToStart}>← 처음으로</BackButton>
         {LEARN_TABS.map((t) => (
           <TabButton key={t.key} $active={tab === t.key} onClick={() => switchTab(t.key)}>
             {t.label}
-            <TabCount>
-              {counts[t.key]}/{totals[t.key]}
-            </TabCount>
           </TabButton>
         ))}
       </TabBar>
@@ -436,29 +628,131 @@ export default function Learn() {
       {showingWordPicker ? (
         <TopicGrid>
           <TopicCard onClick={() => chooseTopic('all')}>
-            <TopicIcon>{TOPIC_ICONS['전체']}</TopicIcon>
+            <TopicIcon>
+              <PixelGlyph kind={topicGlyphKind('전체')} />
+            </TopicIcon>
             <div>
               <TopicName>전체 단어</TopicName>
-              <TopicCount>{totalWordCount}개</TopicCount>
             </div>
           </TopicCard>
           {wordTopics.map((t) => (
             <TopicCard key={t.topic} onClick={() => chooseTopic(t.topic)}>
-              <TopicIcon>{TOPIC_ICONS[t.topic] ?? '🗂️'}</TopicIcon>
+              <TopicIcon>
+                <PixelGlyph kind={topicGlyphKind(t.topic)} />
+              </TopicIcon>
               <div>
                 <TopicName>{t.topic}</TopicName>
-                <TopicCount>{t.count}개</TopicCount>
               </div>
             </TopicCard>
           ))}
         </TopicGrid>
+      ) : showingSubtopicPicker ? (
+        <>
+          <BackRow onClick={backToTopics}>
+            ← 대분류 변경
+            <CurrentTopicLabel>{wordTopic}</CurrentTopicLabel>
+          </BackRow>
+          <TopicGrid>
+            <TopicCard onClick={() => chooseSubtopic('all')}>
+              <TopicIcon>
+                <PixelGlyph kind={topicGlyphKind(wordTopic ?? '')} />
+              </TopicIcon>
+              <div>
+                <TopicName>전체 {wordTopic}</TopicName>
+              </div>
+            </TopicCard>
+            {wordTopics
+              .find((t) => t.topic === wordTopic)
+              ?.subtopics.map((s) => (
+                <TopicCard key={s.subtopic} onClick={() => chooseSubtopic(s.subtopic)}>
+                  <TopicIcon>
+                    <PixelGlyph kind={TOPIC_ICON_KIND[s.subtopic] ?? topicGlyphKind(wordTopic ?? '')} />
+                  </TopicIcon>
+                  <div>
+                    <TopicName>{s.subtopic}</TopicName>
+                  </div>
+                </TopicCard>
+              ))}
+          </TopicGrid>
+        </>
+      ) : showingLetterGroupPicker ? (
+        <TopicGrid>
+          <TopicCard onClick={() => chooseLetterGroup('consonant')}>
+            <TopicIcon>
+              <PixelGlyph kind="handFist" />
+            </TopicIcon>
+            <div>
+              <TopicName>자음</TopicName>
+              <TopicCount>{LETTER_CURRICULUM.filter((i) => i.category === 'consonant').length}개</TopicCount>
+            </div>
+          </TopicCard>
+          <TopicCard onClick={() => chooseLetterGroup('vowel')}>
+            <TopicIcon>
+              <PixelGlyph kind="handOpen" />
+            </TopicIcon>
+            <div>
+              <TopicName>모음</TopicName>
+              <TopicCount>{LETTER_CURRICULUM.filter((i) => i.category === 'vowel').length}개</TopicCount>
+            </div>
+          </TopicCard>
+        </TopicGrid>
+      ) : showingItemListPicker ? (
+        <>
+          {tab === 'letter' && (
+            <BackRow onClick={backToLetterGroups}>
+              ← 자음/모음 변경
+              <CurrentTopicLabel>{letterGroup === 'consonant' ? '자음' : '모음'}</CurrentTopicLabel>
+            </BackRow>
+          )}
+          <WordListGrid>
+            {(tab === 'number' ? NUMBER_CURRICULUM : letterCurriculum).map((item) => (
+              <WordListChip key={item.id} onClick={() => chooseItem(item.label)}>
+                {item.label}
+              </WordListChip>
+            ))}
+          </WordListGrid>
+        </>
+      ) : showingWordListPicker ? (
+        <>
+          <BackRow
+            onClick={
+              wordTopic !== 'all' && (wordTopics.find((t) => t.topic === wordTopic)?.subtopics.length ?? 0) > 1
+                ? backToSubtopics
+                : backToTopics
+            }
+          >
+            ← 카테고리 변경
+            <CurrentTopicLabel>
+              {wordTopic === 'all'
+                ? '전체 단어'
+                : wordSubtopic && wordSubtopic !== 'all' && wordSubtopic !== wordTopic
+                  ? `${wordTopic} > ${wordSubtopic}`
+                  : wordTopic}
+            </CurrentTopicLabel>
+          </BackRow>
+          <WordListGrid>
+            {wordCurriculum.map((item) => (
+              <WordListChip key={item.id} onClick={() => chooseWord(item.label)}>
+                {item.label}
+              </WordListChip>
+            ))}
+          </WordListGrid>
+        </>
       ) : (
         <>
-          {tab === 'word' && (
-            <BackRow onClick={() => setWordTopic(null)}>
-              ← 카테고리 변경
-              <CurrentTopicLabel>{wordTopic === 'all' ? '전체 단어' : wordTopic}</CurrentTopicLabel>
+          {tab === 'word' ? (
+            <BackRow onClick={backToWordList}>
+              ← 단어 목록으로
+              <CurrentTopicLabel>
+                {wordTopic === 'all'
+                  ? '전체 단어'
+                  : wordSubtopic && wordSubtopic !== 'all' && wordSubtopic !== wordTopic
+                    ? `${wordTopic} > ${wordSubtopic}`
+                    : wordTopic}
+              </CurrentTopicLabel>
             </BackRow>
+          ) : (
+            <BackRow onClick={backToItemList}>← 목록으로</BackRow>
           )}
 
           <WordHeader>

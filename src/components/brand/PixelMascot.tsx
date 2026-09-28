@@ -25,16 +25,23 @@ const FACE_PIXELS: Rect[] = [
 ]
 
 // --- full-body extension, same 16-wide grid, placed below the head ---
-const TORSO_PIXELS: Rect[] = [[4, 17, 8, 8]]
+// 1px gaps between torso/arms and between the two legs so each limb gets its
+// own outline seam (the outline is the union silhouette expanded by 1 — with
+// zero gap, adjacent parts fuse into one undifferentiated blob).
+const TORSO_PIXELS: Rect[] = [[5, 17, 6, 8]]
 const ARM_PIXELS: Rect[] = [
   [1, 18, 3, 6], // left arm
   [12, 18, 3, 6], // right arm
 ]
 const LEG_PIXELS: Rect[] = [
-  [5, 25, 3, 7], // left leg
-  [8, 25, 3, 7], // right leg
+  [4, 25, 3, 7], // left leg
+  [9, 25, 3, 7], // right leg
 ]
 const BODY_PIXELS: Rect[] = [...TORSO_PIXELS, ...ARM_PIXELS, ...LEG_PIXELS]
+
+// Torso/arms share the head's skin tone (`handColor`) — not part of the
+// customizable "outfit" slot. `outfitColor` colors only the legs (shorts),
+// see lib/mascotItems.ts.
 
 export type HatId = 'none' | 'beanie' | 'ribbon' | 'crown'
 export type NecklaceId = 'none' | 'chain' | 'pendant'
@@ -91,7 +98,7 @@ export function PixelMascot({
   outlineColor = '#1B1B2F',
   simple = false,
   variant = 'icon',
-  outfitColor = '#E7ECFB',
+  outfitColor = '#E5383B',
   hat = 'none',
   necklace = 'none',
 }: {
@@ -102,6 +109,7 @@ export function PixelMascot({
   simple?: boolean
   /** "icon" (default): head/hand only, matches existing usage. "full": whole body + equipment. */
   variant?: 'icon' | 'full'
+  /** Shorts color (legs only) — torso/arms follow `handColor` instead. */
   outfitColor?: string
   hat?: HatId
   necklace?: NecklaceId
@@ -123,9 +131,9 @@ export function PixelMascot({
           ))}
         </g>
         <RectGroup rects={bodyOutline} fill={outlineColor} />
-        <RectGroup rects={ARM_PIXELS} fill={outfitColor} />
+        <RectGroup rects={ARM_PIXELS} fill={handColor} />
+        <RectGroup rects={TORSO_PIXELS} fill={handColor} />
         <RectGroup rects={LEG_PIXELS} fill={outfitColor} />
-        <RectGroup rects={TORSO_PIXELS} fill={outfitColor} />
         <RectGroup rects={HAND_PIXELS} fill={handColor} />
         <RectGroup rects={FACE_PIXELS} fill={outlineColor} />
         {hat !== 'none' && (

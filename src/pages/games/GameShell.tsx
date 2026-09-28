@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card } from '../../components/ui/Card'
 
 const Back = styled(Link)`
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.primaryDark};
   display: inline-block;
@@ -21,7 +21,7 @@ const TitleRow = styled.div`
 
 const Title = styled.h2`
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   color: ${({ theme }) => theme.colors.primaryDark};
 `
 
@@ -42,7 +42,7 @@ const CameraBox = styled.div`
   align-items: center;
   justify-content: center;
   color: #9aa0c3;
-  font-size: 13px;
+  font-size: 15px;
 `
 
 export function GameShell({

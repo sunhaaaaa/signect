@@ -41,12 +41,12 @@ const Video = styled.video`
 
 const Placeholder = styled.p`
   color: #9aa0c3;
-  font-size: 14px;
+  font-size: 16px;
 `
 
 const Field = styled.label`
   display: block;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   margin-bottom: 12px;
 `
@@ -58,7 +58,7 @@ const Input = styled.input`
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  font-size: 14px;
+  font-size: 16px;
 `
 
 const Select = styled.select`
@@ -68,7 +68,7 @@ const Select = styled.select`
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  font-size: 14px;
+  font-size: 16px;
 `
 
 const ProgressTrack = styled.div`
@@ -93,7 +93,7 @@ const RecordRow = styled.div`
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  font-size: 13px;
+  font-size: 15px;
 
   &:last-child {
     border-bottom: none;
@@ -108,7 +108,7 @@ const JsonBox = styled.textarea`
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   font-family: monospace;
-  font-size: 12px;
+  font-size: 14px;
   resize: vertical;
 `
 
@@ -122,7 +122,7 @@ const ModeButton = styled.button<{ $active: boolean }>`
   flex: 1;
   padding: 10px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   border: 1px solid ${({ theme, $active }) => ($active ? theme.colors.primary : theme.colors.border)};
   background: ${({ theme, $active }) => ($active ? theme.colors.primary : theme.colors.surface)};
